@@ -44,7 +44,6 @@ By using this code, you agree to the following:
 
 ```
 pip install -r requirements.txt
-
 ```
 
 
@@ -54,7 +53,6 @@ pip install -r requirements.txt
 
 ```
 python recover.py
-
 ```
 
 2. Follow the on-screen prompts to choose between recovering a wallet from a partial mnemonic or checking random wallets.
