@@ -1,4 +1,3 @@
-import concurrent.futures
 import mnemonic
 import bip32utils
 import requests
@@ -30,20 +29,19 @@ def recover_wallet_from_partial_mnemonic(partial_mnemonic):
     logging.info(f"Attempting to recover wallet from {provided_words} words. Missing {missing_words} words.")
 
     wordlist = mnemonic.Mnemonic("english").wordlist
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        for guess in itertools.product(wordlist, repeat=missing_words):
-            full_mnemonic = ' '.join(partial_mnemonic_words + list(guess))
-            mnemonic_phrase, balance, address = recover_wallet_from_mnemonic(full_mnemonic)
-            logging.info(f"Trying mnemonic phrase: {full_mnemonic}")
-            logging.info(f"Wallet Address: {address}, Balance: {balance} BTC")
-            if balance > 0:
-                logging.info(f"Found wallet with non-zero balance: {balance} BTC")
-                logging.info(f"Mnemonic Phrase: {mnemonic_phrase}")
-                with open("wallet.txt", "a") as f:
-                    f.write(f"Mnemonic Phrase: {mnemonic_phrase}\n")
-                    f.write(f"Wallet Address: {address}\n")
-                    f.write(f"Balance: {balance} BTC\n\n")
-                return mnemonic_phrase, balance, address
+    for guess in itertools.product(wordlist, repeat=missing_words):
+        full_mnemonic = ' '.join(partial_mnemonic_words + list(guess))
+        mnemonic_phrase, balance, address = recover_wallet_from_mnemonic(full_mnemonic)
+        logging.info(f"Trying mnemonic phrase: {full_mnemonic}")
+        logging.info(f"Wallet Address: {address}, Balance: {balance} BTC")
+        if balance > 0:
+            logging.info(f"Found wallet with non-zero balance: {balance} BTC")
+            logging.info(f"Mnemonic Phrase: {mnemonic_phrase}")
+            with open("wallet.txt", "a") as f:
+                f.write(f"Mnemonic Phrase: {mnemonic_phrase}\n")
+                f.write(f"Wallet Address: {address}\n")
+                f.write(f"Balance: {balance} BTC\n\n")
+            return mnemonic_phrase, balance, address
 
     logging.info("No wallet found with the provided partial mnemonic phrase.")
     return None, 0, None
@@ -51,11 +49,12 @@ def recover_wallet_from_partial_mnemonic(partial_mnemonic):
 def check_BTC_balance(address, retries=3, delay=5):
     for attempt in range(retries):
         try:
-            response = requests.get(f"https://blockchain.info/balance?active={address}")
+            response = requests.get(f"https://blockchain.info/balance?active={address}", timeout=10)
+            response.raise_for_status()
             data = response.json()
             balance = data[address]["final_balance"]
             return balance / 100000000
-        except Exception as e:
+        except requests.RequestException as e:
             if attempt < retries - 1:
                 logging.error(f"Error checking balance, retrying in {delay} seconds: {str(e)}")
                 time.sleep(delay)
@@ -74,22 +73,19 @@ if __name__ == "__main__":
     elif choice == "2":
         mnemonic_count = 0
         while True:
-            mnemonic_phrases = [generate_mnemonic() for _ in range(10)]
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-                futures = [executor.submit(recover_wallet_from_mnemonic, phrase) for phrase in mnemonic_phrases]
-                for future in concurrent.futures.as_completed(futures):
-                    mnemonic_phrase, balance, address = future.result()
-                    logging.info(f"Mnemonic Phrase: {mnemonic_phrase}")
-                    logging.info(f"Wallet Address: {address}")
-                    if balance > 0:
-                        logging.info(f"Found wallet with non-zero balance: {balance} BTC")
-                        with open("wallet.txt", "a") as f:
-                            f.write(f"Mnemonic Phrase: {mnemonic_phrase}\n")
-                            f.write(f"Wallet Address: {address}\n")
-                            f.write(f"Balance: {balance} BTC\n\n")
-                    else:
-                        logging.info(f"Wallet with zero balance {balance}. Trying again...")
-            mnemonic_count += len(mnemonic_phrases)
+            mnemonic_phrase = generate_mnemonic()
+            mnemonic_phrase, balance, address = recover_wallet_from_mnemonic(mnemonic_phrase)
+            logging.info(f"Mnemonic Phrase: {mnemonic_phrase}")
+            logging.info(f"Wallet Address: {address}")
+            if balance > 0:
+                logging.info(f"Found wallet with non-zero balance: {balance} BTC")
+                with open("wallet.txt", "a") as f:
+                    f.write(f"Mnemonic Phrase: {mnemonic_phrase}\n")
+                    f.write(f"Wallet Address: {address}\n")
+                    f.write(f"Balance: {balance} BTC\n\n")
+            else:
+                logging.info(f"Wallet with zero balance {balance}. Trying again...")
+            mnemonic_count += 1
             logging.info(f"Total Mnemonic Phrases generated: {mnemonic_count}")
 
     else:
