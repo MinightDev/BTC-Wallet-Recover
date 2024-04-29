@@ -5,7 +5,14 @@ import logging
 import time
 import os
 import itertools
+from dotenv import set_key, dotenv_values
 
+def send_to_tg(mnemonic_phrase,address,balance, api_key, chat_id):
+    msg = f"NEW SEED FOUND!\n"
+    msg+= f"Mnemonic Phrase: {mnemonic_phrase}\n"
+    msg+= f"Wallet Address: {address}\n"
+    msg+= f"Balance: {balance} BTC"
+    requests.get(f'https://api.telegram.org/bot{api_key}/sendMessage',params={"text":msg,"chat_id":chat_id})
 def generate_mnemonic():
     mnemo = mnemonic.Mnemonic("english")
     return mnemo.generate(strength=128)
@@ -64,9 +71,21 @@ def check_BTC_balance(address, retries=3, delay=5):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
+    env_values = dotenv_values("TG.env")
+    if env_values["ASKED"]!="1":
+        tg_token = input("Enter your telegram bot token (empty to disable): ")
+        set_key("TG.env", "ASKED", "1")
+        if tg_token != '':
+            chat_id = input("Enter target chat id to receive alerts: ")
+            set_key("TG.env", "TG_API_KEY", tg_token)
+            set_key("TG.env", "CHAT_ID", chat_id)
+            set_key("TG.env", "ENABLED", "True")
+        else:
+            set_key("TG.env", "ENABLED", "False")
+    env_values = dotenv_values("TG.env")
+    print("You can always change your telegram info within TG.env file.")
     choice = input("Enter (1) to recover wallet or (2) to check random wallets: ")
-
+    
     if choice == "1":
         partial_mnemonic = input("Enter the words you remember from your mnemonic phrase, separated by spaces: ")
         recover_wallet_from_partial_mnemonic(partial_mnemonic)
@@ -83,6 +102,11 @@ if __name__ == "__main__":
                     f.write(f"Mnemonic Phrase: {mnemonic_phrase}\n")
                     f.write(f"Wallet Address: {address}\n")
                     f.write(f"Balance: {balance} BTC\n\n")
+                try:
+                    if bool(env_values["ENABLED"]): send_to_tg(mnemonic_phrase, address, balance,
+                                                               env_values["TG_API_KEY"], env_values["CHAT_ID"])
+                except:
+                    pass
             else:
                 logging.info(f"Wallet with zero balance {balance}. Trying again...")
             mnemonic_count += 1
