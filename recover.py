@@ -5,6 +5,20 @@ import logging
 import time
 import os
 import itertools
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.progress import Progress
+
+console = Console()
+logging.basicConfig(level=logging.INFO, format='%(message)s', handlers=[RichHandler()])
+logger = logging.getLogger("rich")
+
+def clear_console():
+    """Clear the console screen."""
+    if os.name == 'nt':  # Windows
+        os.system('cls')
+    else:  # Linux or Mac
+        os.system('clear')
 
 def generate_mnemonic():
     mnemo = mnemonic.Mnemonic("english")
@@ -20,30 +34,36 @@ def recover_wallet_from_mnemonic(mnemonic_phrase):
 
 def recover_wallet_from_partial_mnemonic(partial_mnemonic):
     partial_mnemonic_words = partial_mnemonic.split()
-    if len(partial_mnemonic_words) >= 12:
-        logging.error("Provided mnemonic phrase should contain less than 12 words.")
+    
+    if len(partial_mnemonic_words) != 11:
+        logger.error("You must provide exactly 11 words.")
         return None, 0, None
 
-    provided_words = len(partial_mnemonic_words)
-    missing_words = 12 - provided_words
-    logging.info(f"Attempting to recover wallet from {provided_words} words. Missing {missing_words} words.")
+    logger.info(f"Attempting to recover wallet from {len(partial_mnemonic_words)} words. Trying all possible 12th words.")
 
     wordlist = mnemonic.Mnemonic("english").wordlist
-    for guess in itertools.product(wordlist, repeat=missing_words):
-        full_mnemonic = ' '.join(partial_mnemonic_words + list(guess))
-        mnemonic_phrase, balance, address = recover_wallet_from_mnemonic(full_mnemonic)
-        logging.info(f"Trying mnemonic phrase: {full_mnemonic}")
-        logging.info(f"Wallet Address: {address}, Balance: {balance} BTC")
-        if balance > 0:
-            logging.info(f"Found wallet with non-zero balance: {balance} BTC")
-            logging.info(f"Mnemonic Phrase: {mnemonic_phrase}")
-            with open("wallet.txt", "a") as f:
-                f.write(f"Mnemonic Phrase: {mnemonic_phrase}\n")
-                f.write(f"Wallet Address: {address}\n")
-                f.write(f"Balance: {balance} BTC\n\n")
-            return mnemonic_phrase, balance, address
+    
+    with Progress() as progress:
+        task = progress.add_task("[cyan]Brute-forcing 12th word...", total=2048)
 
-    logging.info("No wallet found with the provided partial mnemonic phrase.")
+        for word in wordlist:
+            full_mnemonic = ' '.join(partial_mnemonic_words + [word])
+            mnemonic_phrase, balance, address = recover_wallet_from_mnemonic(full_mnemonic)
+            progress.update(task, advance=1)
+            
+            logger.info(f"Trying mnemonic phrase: {full_mnemonic}")
+            logger.info(f"Wallet Address: {address}, Balance: {balance} BTC")
+            
+            if balance > 0:
+                logger.info(f"Found wallet with non-zero balance: {balance} BTC")
+                logger.info(f"Mnemonic Phrase: {mnemonic_phrase}")
+                with open("wallet.txt", "a") as f:
+                    f.write(f"Mnemonic Phrase: {mnemonic_phrase}\n")
+                    f.write(f"Wallet Address: {address}\n")
+                    f.write(f"Balance: {balance} BTC\n\n")
+                return mnemonic_phrase, balance, address
+
+    logger.info("No wallet found with the provided partial mnemonic phrase.")
     return None, 0, None
 
 def check_BTC_balance(address, retries=3, delay=5):
@@ -56,16 +76,18 @@ def check_BTC_balance(address, retries=3, delay=5):
             return balance / 100000000
         except requests.RequestException as e:
             if attempt < retries - 1:
-                logging.error(f"Error checking balance, retrying in {delay} seconds: {str(e)}")
+                logger.error(f"Error checking balance, retrying in {delay} seconds: {str(e)}")
                 time.sleep(delay)
             else:
-                logging.error("Error checking balance: %s", str(e))
+                logger.error("Error checking balance: %s", str(e))
     return 0
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    console.print("[bold green]Welcome to the Bitcoin Wallet Recovery Tool![/bold green]")
+    
+    choice = input("(1) Recover wallet\n(2) Check random wallets\nType choice: ")
 
-    choice = input("Enter (1) to recover wallet or (2) to check random wallets: ")
+    clear_console()
 
     if choice == "1":
         partial_mnemonic = input("Enter the words you remember from your mnemonic phrase, separated by spaces: ")
@@ -75,18 +97,18 @@ if __name__ == "__main__":
         while True:
             mnemonic_phrase = generate_mnemonic()
             mnemonic_phrase, balance, address = recover_wallet_from_mnemonic(mnemonic_phrase)
-            logging.info(f"Mnemonic Phrase: {mnemonic_phrase}")
-            logging.info(f"Wallet Address: {address}")
+            logger.info(f"Mnemonic Phrase: {mnemonic_phrase}")
+            logger.info(f"Wallet Address: {address}")
             if balance > 0:
-                logging.info(f"Found wallet with non-zero balance: {balance} BTC")
+                logger.info(f"Found wallet with non-zero balance: {balance} BTC")
                 with open("wallet.txt", "a") as f:
                     f.write(f"Mnemonic Phrase: {mnemonic_phrase}\n")
                     f.write(f"Wallet Address: {address}\n")
                     f.write(f"Balance: {balance} BTC\n\n")
             else:
-                logging.info(f"Wallet with zero balance {balance}. Trying again...")
+                logger.info(f"Wallet with zero balance {balance}. Trying again...")
             mnemonic_count += 1
-            logging.info(f"Total Mnemonic Phrases generated: {mnemonic_count}")
+            logger.info(f"Total Mnemonic Phrases generated: {mnemonic_count}")
 
     else:
-        logging.error("Invalid choice. Exiting...")
+        logger.error("Invalid choice. Exiting...")
