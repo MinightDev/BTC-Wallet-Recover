@@ -15,9 +15,9 @@ logger = logging.getLogger("rich")
 
 def clear_console():
     """Clear the console screen."""
-    if os.name == 'nt':  # Windows
+    if os.name == 'nt':
         os.system('cls')
-    else:  # Linux or Mac
+    else:
         os.system('clear')
 
 def generate_mnemonic():
