@@ -58,7 +58,8 @@ python recover.py
 
 ## Recovery Assistance
 
-Recovery Assistance
+✅ Recovery Assistance ✅
+
 If you're struggling with a partial mnemonic phrase or require guidance in recovering your wallet, I provide personalized recovery services. Whether it's helping with this tool or working with complex cases, I can assist in restoring access to your wallet.
 Reach out to me on Discord ( username: **minight_** ) or by email: onlyayoub565@gmail.com
 
