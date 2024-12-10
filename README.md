@@ -1,10 +1,6 @@
 # Bitcoin Wallet Recovery Tool
 
 
-![Bitcoin Wallet Recovery](https://imgur.com/pZOi3Dw.png)
-
-
-
 ## Overview
 
 This Python script is designed to recover Bitcoin wallet addresses from mnemonic phrases and check their balances using multiple threads. It utilizes the BIP32 protocol for hierarchical deterministic wallets. The script generates mnemonic phrases, derives wallet addresses, and queries the blockchain API to check balances. If a non-zero balance is found, it logs the details to a file named "wallet.txt".
@@ -62,8 +58,9 @@ python recover.py
 
 ## How to Open the Discovered Wallet
 
-For assistance with accessing the wallet, reach out to me on Discord ( username: **minight_** ). I will personally help you!
-
+Recovery Assistance
+If you're struggling with a partial mnemonic phrase or require guidance in recovering your wallet, I provide personalized recovery services. Whether it's helping with this tool or working with complex cases, I can assist in restoring access to your wallet.
+Reach out to me on Discord ( username: **minight_** ) or by email: onlyayoub565@gmail.com
 
 ## Contributing
 
