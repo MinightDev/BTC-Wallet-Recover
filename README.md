@@ -56,7 +56,7 @@ python recover.py
 4. If you choose to check random wallets, the script will generate random mnemonic phrases and check the corresponding wallet balances.
 5. If a wallet with a non-zero balance is found, the script will log the mnemonic phrase, wallet address, and balance to the `wallet.txt` file.
 
-## How to Open the Discovered Wallet
+## Recovery Assistance
 
 Recovery Assistance
 If you're struggling with a partial mnemonic phrase or require guidance in recovering your wallet, I provide personalized recovery services. Whether it's helping with this tool or working with complex cases, I can assist in restoring access to your wallet.
