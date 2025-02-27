@@ -1,4 +1,4 @@
-bip32utils==0.3.post4
+bip32utils
 mnemonic==0.21
 Requests==2.31.0
 rich
