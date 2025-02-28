@@ -32,7 +32,13 @@ By using this code, you agree to the following:
 - Python 3.x
 - Required Python packages: `mnemonic`, `bip32utils`, `requests`
 
-## Installation
+## Usage
+
+### Option 1: Run the Executable (Quick Usage)
+I’ve included an `.exe` file compiled with PyInstaller for quick and easy use without the need to install any dependencies. Just download the executable, and you’re ready to go!
+
+### Option 2: Run the Script
+Alternatively, you can use the Python script directly. Ensure that you have installed the necessary dependencies listed in `requirements.txt`.
 
 1. Clone the repository or download the source code.
 2. Navigate to the project directory.
